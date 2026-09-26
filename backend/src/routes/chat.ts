@@ -56,23 +56,12 @@ chatRouter.post(
       return;
     }
 
-    // Fast path: no relevant chunks -> honest "I don't know" without calling the LLM.
-    if (!debugInfo.retrieval_hit) {
-      const answer = "I don't know — this workspace's documents don't contain information about that.";
-      await supabase.from("messages").insert({
-        workspace_id: workspaceId,
-        user_id: userId,
-        role: "assistant",
-        content: answer,
-        citations: [],
-      });
-      send("citations", { chunks: [] });
-      send("token", { text: answer });
-      send("done", {});
-      res.end();
-      await recordMetric({ workspaceId, endpoint: "chat", latencyMs: Date.now() - startedAt, retrievalHit: false });
-      return;
-    }
+    // Note: we deliberately do NOT short-circuit to a canned "I don't know"
+    // when retrieval misses. A miss just means contextChunks is empty going
+    // into the model — the system prompt (see buildSystemPrompt) instructs it
+    // to refuse ungrounded factual questions, but the user's message might
+    // instead be a tool request (e.g. "save a task") that has nothing to do
+    // with document content and must still reach the tool-calling loop.
 
     const { data: historyRows } = await supabase
       .from("messages")
