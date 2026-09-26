@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { SearchMultiSelect } from "./SearchMultiSelect";
 
 interface ShareModalProps {
@@ -13,7 +14,7 @@ interface ShareModalProps {
 export function ShareModal({ filename, options, initiallySelected, busy, onCancel, onSave }: ShareModalProps) {
   const [selected, setSelected] = useState<string[]>(initiallySelected);
 
-  return (
+  return createPortal(
     <div className="share-screen">
       <div className="share-screen-header">
         <div>
@@ -46,6 +47,7 @@ export function ShareModal({ filename, options, initiallySelected, busy, onCance
           {busy ? "Saving..." : "Save sharing"}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
