@@ -19,7 +19,6 @@ export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
-  const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
   const [shareModalDoc, setShareModalDoc] = useState<Document | null>(null);
   const [shareBusy, setShareBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +109,9 @@ export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
                 <strong>{doc.filename}</strong>
                 <span className="doc-meta">
                   {doc.status} &middot; {doc.chunk_count} chunks
+                  {!doc.sharedFrom && doc.sharedWith.length > 0 && (
+                    <> &middot; shared with {doc.sharedWith.length} workspace{doc.sharedWith.length > 1 ? "s" : ""}</>
+                  )}
                 </span>
                 {doc.sharedFrom && <span className="shared-badge">Shared from {doc.sharedFrom}</span>}
               </div>
@@ -119,21 +121,6 @@ export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
                 </button>
               )}
             </div>
-
-            {!doc.sharedFrom && doc.sharedWith.length > 0 && (
-              <details
-                className="share-accordion"
-                open={expandedDocId === doc.id}
-                onToggle={(e) => setExpandedDocId((e.target as HTMLDetailsElement).open ? doc.id : null)}
-              >
-                <summary>Shared with {doc.sharedWith.length} workspace{doc.sharedWith.length > 1 ? "s" : ""}</summary>
-                <ul>
-                  {doc.sharedWith.map((s) => (
-                    <li key={s.workspaceId}>{s.name}</li>
-                  ))}
-                </ul>
-              </details>
-            )}
           </li>
         ))}
         {documents.length === 0 && <li className="empty-hint">No documents yet.</li>}

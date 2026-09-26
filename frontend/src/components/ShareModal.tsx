@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SearchMultiSelect } from "./SearchMultiSelect";
 
 interface ShareModalProps {
   filename: string;
@@ -10,41 +11,40 @@ interface ShareModalProps {
 }
 
 export function ShareModal({ filename, options, initiallySelected, busy, onCancel, onSave }: ShareModalProps) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(initiallySelected));
-
-  const toggle = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  const [selected, setSelected] = useState<string[]>(initiallySelected);
 
   return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="glass-strong modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3 className="modal-title">Share "{filename}"</h3>
-        <p className="modal-subtitle">Choose which workspaces can retrieve and cite this document.</p>
-
-        <div className="modal-options">
-          {options.length === 0 && <div className="empty-hint">You don't have any other workspaces yet.</div>}
-          {options.map((opt) => (
-            <label key={opt.id} className="modal-option">
-              <input type="checkbox" checked={selected.has(opt.id)} onChange={() => toggle(opt.id)} />
-              {opt.name}
-            </label>
-          ))}
+    <div className="share-screen">
+      <div className="share-screen-header">
+        <div>
+          <div className="share-screen-eyebrow">Sharing</div>
+          <h2 className="share-screen-title">{filename}</h2>
         </div>
+        <button className="btn btn-ghost btn-sm" onClick={onCancel} disabled={busy}>
+          Close
+        </button>
+      </div>
 
-        <div className="modal-actions">
-          <button className="btn btn-ghost btn-sm" onClick={onCancel} disabled={busy}>
-            Cancel
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={() => onSave([...selected])} disabled={busy}>
-            {busy ? "Saving..." : "Save"}
-          </button>
-        </div>
+      <div className="share-screen-body">
+        <p className="modal-subtitle">
+          Search and select any workspaces that should be able to retrieve and cite this document. Remove a chip to
+          revoke access.
+        </p>
+
+        {options.length === 0 ? (
+          <div className="empty-hint">You don't have any other workspaces yet.</div>
+        ) : (
+          <SearchMultiSelect options={options} selected={selected} onChange={setSelected} />
+        )}
+      </div>
+
+      <div className="share-screen-footer">
+        <button className="btn btn-ghost" onClick={onCancel} disabled={busy}>
+          Cancel
+        </button>
+        <button className="btn btn-primary" onClick={() => onSave(selected)} disabled={busy}>
+          {busy ? "Saving..." : "Save sharing"}
+        </button>
       </div>
     </div>
   );
