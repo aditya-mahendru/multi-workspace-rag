@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { apiGet, streamChat, type ChatStreamEvent } from "../lib/api";
 
 interface Citation {
@@ -91,7 +92,13 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
                 {m.role === "user" ? "You" : "Assistant"}
               </div>
               <div className={`bubble ${m.role}`}>
-                {m.content}
+                {m.role === "assistant" ? (
+                  <div className="markdown">
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  m.content
+                )}
                 {m.toolCalls && m.toolCalls.length > 0 && (
                   <div>
                     {m.toolCalls.map((tc, i) => (
