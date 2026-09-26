@@ -14,8 +14,11 @@ Built as two independently deployed services:
 
 ## Live demo
 
-- Frontend: `<fill in your Vercel URL>`
-- Backend: `<fill in your Render URL>`
+- Frontend: https://multi-workspace-rag.vercel.app/
+- Backend: https://workspace-chat-backend-71kh.onrender.com
+
+Note: the backend runs on Render's free tier, which spins down after inactivity — the first
+request after a while may take 30-60s to wake it up.
 - Throwaway login: see [Testing it / isolation walkthrough](#testing-it--isolation-walkthrough) below.
 
 ## Architecture
