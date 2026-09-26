@@ -3,6 +3,7 @@ services:
     name: workspace-chat-backend
     runtime: node
     rootDir: backend
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
@@ -21,7 +22,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_EMBEDDING_MODEL
-        value: text-embedding-004
+        value: gemini-embedding-001
       - key: NOTIFY_WEBHOOK_URL
         sync: false
       - key: NOTIFY_WEBHOOK_KIND
