@@ -68,6 +68,8 @@ export async function runChatWithTools({ question, contextChunks, history, toolC
   onEvent({ type: "citations", chunks: contextChunks });
 
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
+    // eslint-disable-next-line no-console
+    console.log(`[llm] iteration ${iteration}`);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -121,6 +123,9 @@ export async function runChatWithTools({ question, contextChunks, history, toolC
     }
 
     const pendingToolCalls = Object.values(toolCallAcc);
+
+    // eslint-disable-next-line no-console
+    console.log(`[llm] iteration ${iteration} requested ${pendingToolCalls.length} tool call(s): ${pendingToolCalls.map((t) => t.name).join(", ") || "(none, final answer)"}`);
 
     if (pendingToolCalls.length === 0) {
       onEvent({ type: "done" });
