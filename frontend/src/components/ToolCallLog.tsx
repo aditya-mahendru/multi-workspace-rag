@@ -27,18 +27,19 @@ export function ToolCallLog({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div>
-      <h3 style={{ fontSize: 14, textTransform: "uppercase", color: "#666", marginBottom: 8 }}>Tool-call log</h3>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 12, maxHeight: 240, overflowY: "auto" }}>
+      <h3 className="panel-title">Tool-call log</h3>
+      <ul className="log-list">
         {calls.map((c) => (
-          <li key={c.id} style={{ padding: "6px 0", borderBottom: "1px solid #eee" }}>
-            <span style={{ color: c.status === "success" ? "#059669" : "#c0392b", fontWeight: 600 }}>
-              {c.status === "success" ? "✓" : "✗"} {c.tool_name}
-            </span>{" "}
-            <span style={{ color: "#999" }}>({c.latency_ms}ms)</span>
-            {c.error && <div style={{ color: "#c0392b" }}>{c.error}</div>}
+          <li key={c.id} className="log-item">
+            <div className="log-item-head">
+              <span className={`dot ${c.status}`} />
+              {c.tool_name}
+              <span className="log-latency">{c.latency_ms}ms</span>
+            </div>
+            {c.error && <div className="log-error">{c.error}</div>}
           </li>
         ))}
-        {calls.length === 0 && <li style={{ color: "#999" }}>No tool calls yet.</li>}
+        {calls.length === 0 && <li className="empty-hint">No tool calls yet.</li>}
       </ul>
     </div>
   );

@@ -77,54 +77,63 @@ export function ChatPanel({ workspaceId }: { workspaceId: string }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ flex: 1, overflowY: "auto", padding: 12, background: "#fafafa", borderRadius: 8, minHeight: 300 }}>
+    <div className="chat-shell">
+      <div className="chat-scroll">
+        {messages.length === 0 && (
+          <div className="empty-hint" style={{ margin: "auto" }}>
+            Ask a question about this workspace's documents to get started.
+          </div>
+        )}
         {messages.map((m) => (
-          <div key={m.id} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: m.role === "user" ? "#111827" : "#2563eb", marginBottom: 2 }}>
-              {m.role === "user" ? "You" : "Assistant"}
-            </div>
-            <div style={{ whiteSpace: "pre-wrap", fontSize: 14 }}>{m.content}</div>
-            {m.toolCalls && m.toolCalls.length > 0 && (
-              <div style={{ marginTop: 4 }}>
-                {m.toolCalls.map((tc, i) => (
-                  <div key={i} style={{ fontSize: 12, color: tc.status === "success" ? "#059669" : "#c0392b" }}>
-                    {tc.status === "success" ? "✓" : "✗"} tool: {tc.name}
-                    {tc.error ? ` (${tc.error})` : ""}
-                  </div>
-                ))}
+          <div key={m.id} className={`bubble-row ${m.role}`}>
+            <div style={{ maxWidth: "100%" }}>
+              <div className="bubble-label" style={{ textAlign: m.role === "user" ? "right" : "left" }}>
+                {m.role === "user" ? "You" : "Assistant"}
               </div>
-            )}
-            {m.citations && m.citations.length > 0 && (
-              <details style={{ marginTop: 4, fontSize: 12, color: "#666" }}>
-                <summary style={{ cursor: "pointer" }}>{m.citations.length} source(s)</summary>
-                <ul style={{ margin: "4px 0 0", paddingLeft: 16 }}>
-                  {m.citations.map((c) => (
-                    <li key={c.id}>
-                      {c.document_filename}
-                      {c.section_label ? ` — ${c.section_label}` : ""} (score {c.score?.toFixed(2)})
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
+              <div className={`bubble ${m.role}`}>
+                {m.content}
+                {m.toolCalls && m.toolCalls.length > 0 && (
+                  <div>
+                    {m.toolCalls.map((tc, i) => (
+                      <span key={i} className={`tool-chip ${tc.status}`}>
+                        {tc.status === "success" ? "✓" : "✗"} {tc.name}
+                        {tc.error ? ` — ${tc.error}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {m.citations && m.citations.length > 0 && (
+                  <details className="citations">
+                    <summary>{m.citations.length} source(s)</summary>
+                    <ul>
+                      {m.citations.map((c) => (
+                        <li key={c.id}>
+                          {c.document_filename}
+                          {c.section_label ? ` — ${c.section_label}` : ""} (score {c.score?.toFixed(2)})
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            </div>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
-      <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center" }}>
-        <label style={{ fontSize: 12, color: "#666", display: "flex", gap: 4, alignItems: "center" }}>
+      <div className="chat-input-row">
+        <label className="hybrid-toggle">
           <input type="checkbox" checked={hybrid} onChange={(e) => setHybrid(e.target.checked)} />
           Hybrid search
         </label>
         <input
+          className="input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
           placeholder="Ask a question about this workspace's documents..."
-          style={{ flex: 1, padding: "10px 12px", borderRadius: 6, border: "1px solid #d1d5db" }}
         />
-        <button onClick={send} disabled={busy} style={{ padding: "10px 16px", borderRadius: 6, border: "none", background: "#111827", color: "white" }}>
+        <button onClick={send} disabled={busy} className="btn btn-primary">
           Send
         </button>
       </div>

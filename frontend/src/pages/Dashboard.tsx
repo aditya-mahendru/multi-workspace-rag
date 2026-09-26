@@ -11,43 +11,56 @@ export function Dashboard() {
   const { session, signOut } = useAuth();
   const { activeWorkspaceId, loading } = useWorkspace();
 
-  if (loading) return <div style={{ padding: 24 }}>Loading workspaces...</div>;
+  if (loading) {
+    return (
+      <div className="app-shell" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh" }}>
+        <span className="empty-hint">Loading workspaces...</span>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", height: "100vh", display: "flex", flexDirection: "column" }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 20px",
-          borderBottom: "1px solid #e5e7eb",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <strong>Workspace Document Assistant</strong>
+    <div className="app-shell dashboard-shell">
+      <header className="topbar">
+        <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+          <div className="brand">
+            <span className="brand-dot" />
+            Workspace Assistant
+          </div>
           <WorkspaceSwitcher />
         </div>
-        <div style={{ fontSize: 13, color: "#666", display: "flex", gap: 12, alignItems: "center" }}>
+        <div className="topbar-user">
           <span>{session?.user.email}</span>
-          <button onClick={signOut}>Sign out</button>
+          <button onClick={signOut} className="btn btn-ghost btn-sm">
+            Sign out
+          </button>
         </div>
       </header>
 
       {!activeWorkspaceId ? (
-        <div style={{ padding: 24 }}>Create a workspace to get started.</div>
+        <div style={{ padding: 32 }}>
+          <span className="empty-hint">Create a workspace to get started.</span>
+        </div>
       ) : (
-        <main style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 300px", gap: 16, padding: 16, overflow: "hidden" }}>
-          <aside style={{ overflowY: "auto" }}>
+        <main className="main-grid">
+          <aside className="glass panel panel-scroll">
             <DocumentUpload workspaceId={activeWorkspaceId} />
           </aside>
-          <section style={{ overflow: "hidden" }}>
+
+          <section className="glass panel" style={{ padding: 0, overflow: "hidden" }}>
             <ChatPanel workspaceId={activeWorkspaceId} />
           </section>
-          <aside style={{ overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
-            <ToolCallLog workspaceId={activeWorkspaceId} />
-            <RetrievalDebugPanel workspaceId={activeWorkspaceId} />
-            <MetricsPanel workspaceId={activeWorkspaceId} />
+
+          <aside className="stack panel-scroll">
+            <div className="glass panel">
+              <ToolCallLog workspaceId={activeWorkspaceId} />
+            </div>
+            <div className="glass panel">
+              <RetrievalDebugPanel workspaceId={activeWorkspaceId} />
+            </div>
+            <div className="glass panel">
+              <MetricsPanel workspaceId={activeWorkspaceId} />
+            </div>
           </aside>
         </main>
       )}

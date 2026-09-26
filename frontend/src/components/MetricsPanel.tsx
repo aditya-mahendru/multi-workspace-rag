@@ -25,11 +25,19 @@ export function MetricsPanel({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div>
-      <h3 style={{ fontSize: 14, textTransform: "uppercase", color: "#666", marginBottom: 8 }}>Observability</h3>
-      <div style={{ fontSize: 12, marginBottom: 6 }}>
-        avg latency: {avgLatency}ms &middot; retrieval hit rate: {hitRate}% &middot; {metrics.length} requests logged
+      <h3 className="panel-title">Observability</h3>
+      <div className="metrics-summary">
+        <span>
+          avg latency <b>{avgLatency}ms</b>
+        </span>
+        <span>&middot;</span>
+        <span>
+          hit rate <b>{hitRate}%</b>
+        </span>
+        <span>&middot;</span>
+        <span>{metrics.length} requests</span>
       </div>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: 11, maxHeight: 150, overflowY: "auto", color: "#666" }}>
+      <ul className="metrics-list">
         {metrics.map((m, i) => (
           <li key={i}>
             {m.endpoint}: {m.latency_ms}ms, hit={String(m.retrieval_hit)}

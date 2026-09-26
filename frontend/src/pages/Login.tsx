@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 export function Login() {
@@ -26,55 +26,41 @@ export function Login() {
   };
 
   return (
-    <div style={{ maxWidth: 360, margin: "80px auto", fontFamily: "system-ui, sans-serif" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 4 }}>Workspace Document Assistant</h1>
-      <p style={{ color: "#666", marginTop: 0, marginBottom: 24 }}>Sign in to continue</p>
-      <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={inputStyle}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-          style={inputStyle}
-        />
-        {error && <div style={{ color: "#c0392b", fontSize: 13 }}>{error}</div>}
-        <button type="submit" disabled={busy} style={buttonStyle}>
-          {busy ? "Please wait…" : mode === "sign-in" ? "Sign in" : "Create account"}
+    <div className="app-shell login-shell">
+      <div className="glass login-card">
+        <div className="brand" style={{ marginBottom: 18 }}>
+          <span className="brand-dot" />
+          Workspace Assistant
+        </div>
+        <h1 className="login-title">Welcome back</h1>
+        <p className="login-subtitle">Sign in to access your workspaces</p>
+        <form onSubmit={onSubmit} className="login-form">
+          <input
+            className="input"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            className="input"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
+          {error && <div className="error-text">{error}</div>}
+          <button type="submit" disabled={busy} className="btn btn-primary" style={{ marginTop: 6 }}>
+            {busy ? "Please wait..." : mode === "sign-in" ? "Sign in" : "Create account"}
+          </button>
+        </form>
+        <button onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")} className="link-btn" style={{ marginTop: 16 }}>
+          {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
         </button>
-      </form>
-      <button
-        onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
-        style={{ marginTop: 12, background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontSize: 13 }}
-      >
-        {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-      </button>
+      </div>
     </div>
   );
 }
-
-const inputStyle: CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: 6,
-  border: "1px solid #d1d5db",
-  fontSize: 14,
-};
-
-const buttonStyle: CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: 6,
-  border: "none",
-  background: "#111827",
-  color: "white",
-  fontSize: 14,
-  cursor: "pointer",
-};

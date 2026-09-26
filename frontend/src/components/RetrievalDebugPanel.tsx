@@ -43,29 +43,34 @@ export function RetrievalDebugPanel({ workspaceId }: { workspaceId: string }) {
 
   return (
     <div>
-      <h3 style={{ fontSize: 14, textTransform: "uppercase", color: "#666", marginBottom: 8 }}>Retrieval debug</h3>
-      <form onSubmit={onSubmit} style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+      <h3 className="panel-title">Retrieval debug</h3>
+      <form onSubmit={onSubmit} className="debug-form">
         <input
+          className="input"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Test a question against this workspace only"
-          style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: 12 }}
+          placeholder="Test a question against this workspace"
+          style={{ flex: 1, fontSize: 12, padding: "8px 10px" }}
         />
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy} className="btn btn-ghost btn-sm">
           Run
         </button>
       </form>
       {result && (
-        <div style={{ fontSize: 12 }}>
+        <div className="debug-result">
           <div>
-            workspace_id: <code>{result.workspace_id}</code>
+            <span className="kv">workspace_id:</span> <code>{result.workspace_id.slice(0, 8)}...</code>
           </div>
-          <div>mode: {result.mode}</div>
-          <div>retrieval_hit: {result.retrieval_hit ? "true" : "false"}</div>
-          <ul style={{ paddingLeft: 16 }}>
+          <div>
+            <span className="kv">mode:</span> {result.mode} &middot; <span className="kv">hit:</span>{" "}
+            {result.retrieval_hit ? "true" : "false"}
+          </div>
+          <ul className="debug-chunks">
             {result.chunks.map((c) => (
               <li key={c.id}>
-                <strong>{c.document_filename}</strong> (score {c.score?.toFixed(2)}) &mdash; {c.content.slice(0, 80)}...
+                <strong style={{ color: "var(--text-0)" }}>{c.document_filename}</strong> (score {c.score?.toFixed(2)})
+                <br />
+                {c.content.slice(0, 80)}...
               </li>
             ))}
           </ul>

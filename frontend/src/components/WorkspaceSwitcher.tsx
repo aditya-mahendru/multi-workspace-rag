@@ -15,11 +15,11 @@ export function WorkspaceSwitcher() {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="ws-switcher">
       <select
         value={activeWorkspaceId ?? ""}
         onChange={(e) => setActiveWorkspaceId(e.target.value)}
-        style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #d1d5db" }}
+        className="input"
       >
         {workspaces.map((w) => (
           <option key={w.id} value={w.id}>
@@ -28,21 +28,23 @@ export function WorkspaceSwitcher() {
         ))}
       </select>
       {creating ? (
-        <form onSubmit={onCreate} style={{ display: "flex", gap: 6 }}>
+        <form onSubmit={onCreate} className="ws-new-form">
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Workspace name"
-            style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid #d1d5db" }}
+            className="input"
           />
-          <button type="submit">Add</button>
-          <button type="button" onClick={() => setCreating(false)}>
+          <button type="submit" className="btn btn-primary btn-sm">
+            Add
+          </button>
+          <button type="button" onClick={() => setCreating(false)} className="btn btn-ghost btn-sm">
             Cancel
           </button>
         </form>
       ) : (
-        <button onClick={() => setCreating(true)} style={{ fontSize: 13 }}>
+        <button onClick={() => setCreating(true)} className="btn btn-ghost btn-sm">
           + New workspace
         </button>
       )}
