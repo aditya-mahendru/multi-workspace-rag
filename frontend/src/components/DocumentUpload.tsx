@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { apiGet, apiPost, apiUpload } from "../lib/api";
+import { apiDelete, apiGet, apiPost, apiUpload } from "../lib/api";
 import { useWorkspace } from "../state/WorkspaceContext";
+import { ShareModal } from "./ShareModal";
 
 interface Document {
   id: string;
@@ -8,6 +9,8 @@ interface Document {
   status: string;
   chunk_count: number;
   created_at: string;
+  sharedFrom: string | null;
+  sharedWith: { workspaceId: string; name: string }[];
 }
 
 export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
@@ -16,7 +19,9 @@ export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
-  const [sharingDocId, setSharingDocId] = useState<string | null>(null);
+  const [expandedDocId, setExpandedDocId] = useState<string | null>(null);
+  const [shareModalDoc, setShareModalDoc] = useState<Document | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -54,18 +59,28 @@ export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
     }
   };
 
-  const shareDoc = async (documentId: string, targetWorkspaceId: string) => {
-    if (!targetWorkspaceId) return;
-    setSharingDocId(documentId);
-    setMessage(null);
+  const onSaveShares = async (doc: Document, selectedIds: string[]) => {
+    const currentIds = doc.sharedWith.map((s) => s.workspaceId);
+    const toAdd = selectedIds.filter((id) => !currentIds.includes(id));
+    const toRemove = currentIds.filter((id) => !selectedIds.includes(id));
+
+    setShareBusy(true);
     try {
-      await apiPost(`/workspaces/${workspaceId}/share`, { documentId, targetWorkspaceId });
-      const targetName = workspaces.find((w) => w.id === targetWorkspaceId)?.name ?? "the target workspace";
-      setMessage({ text: `Shared into ${targetName}. It's now retrievable there too.` });
+      await Promise.all([
+        ...toAdd.map((targetWorkspaceId) =>
+          apiPost(`/workspaces/${workspaceId}/share`, { documentId: doc.id, targetWorkspaceId }),
+        ),
+        ...toRemove.map((targetWorkspaceId) =>
+          apiDelete(`/workspaces/${workspaceId}/share`, { documentId: doc.id, targetWorkspaceId }),
+        ),
+      ]);
+      setMessage({ text: `Updated sharing for ${doc.filename}.` });
+      setShareModalDoc(null);
+      await load();
     } catch (err) {
-      setMessage({ text: err instanceof Error ? err.message : "Sharing failed", error: true });
+      setMessage({ text: err instanceof Error ? err.message : "Failed to update sharing", error: true });
     } finally {
-      setSharingDocId(null);
+      setShareBusy(false);
     }
   };
 
@@ -89,33 +104,51 @@ export function DocumentUpload({ workspaceId }: { workspaceId: string }) {
 
       <ul className="doc-list">
         {documents.map((doc) => (
-          <li key={doc.id} className="doc-item">
-            <strong>{doc.filename}</strong>
-            <span className="doc-meta">
-              {doc.status} &middot; {doc.chunk_count} chunks
-            </span>
-            {otherWorkspaces.length > 0 && (
-              <select
-                className="input"
-                value=""
-                disabled={sharingDocId === doc.id}
-                onChange={(e) => shareDoc(doc.id, e.target.value)}
-                style={{ marginTop: 6, fontSize: 12, padding: "5px 8px", width: "100%" }}
+          <li key={doc.id} className={`doc-item ${doc.sharedFrom ? "doc-item-shared" : ""}`}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <div>
+                <strong>{doc.filename}</strong>
+                <span className="doc-meta">
+                  {doc.status} &middot; {doc.chunk_count} chunks
+                </span>
+                {doc.sharedFrom && <span className="shared-badge">Shared from {doc.sharedFrom}</span>}
+              </div>
+              {!doc.sharedFrom && otherWorkspaces.length > 0 && (
+                <button className="btn btn-ghost btn-sm" onClick={() => setShareModalDoc(doc)}>
+                  Share
+                </button>
+              )}
+            </div>
+
+            {!doc.sharedFrom && doc.sharedWith.length > 0 && (
+              <details
+                className="share-accordion"
+                open={expandedDocId === doc.id}
+                onToggle={(e) => setExpandedDocId((e.target as HTMLDetailsElement).open ? doc.id : null)}
               >
-                <option value="" disabled>
-                  {sharingDocId === doc.id ? "Sharing..." : "Share into workspace..."}
-                </option>
-                {otherWorkspaces.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                <summary>Shared with {doc.sharedWith.length} workspace{doc.sharedWith.length > 1 ? "s" : ""}</summary>
+                <ul>
+                  {doc.sharedWith.map((s) => (
+                    <li key={s.workspaceId}>{s.name}</li>
+                  ))}
+                </ul>
+              </details>
             )}
           </li>
         ))}
         {documents.length === 0 && <li className="empty-hint">No documents yet.</li>}
       </ul>
+
+      {shareModalDoc && (
+        <ShareModal
+          filename={shareModalDoc.filename}
+          options={otherWorkspaces.map((w) => ({ id: w.id, name: w.name }))}
+          initiallySelected={shareModalDoc.sharedWith.map((s) => s.workspaceId)}
+          busy={shareBusy}
+          onCancel={() => setShareModalDoc(null)}
+          onSave={(ids) => onSaveShares(shareModalDoc, ids)}
+        />
+      )}
     </div>
   );
 }

@@ -50,18 +50,82 @@ workspacesRouter.post(
   }),
 );
 
+// Documents visible in a workspace: the workspace's own documents (each
+// annotated with which other workspaces it has been shared into), plus any
+// documents explicitly shared IN from elsewhere (annotated with the source
+// workspace's name so the UI can render them distinctly).
 workspacesRouter.get(
   "/:workspaceId/documents",
   requireWorkspaceMember,
   asyncHandler(async (req, res) => {
-    const { data, error } = await supabase
+    const workspaceId = req.params.workspaceId;
+
+    const { data: ownDocs, error: ownDocsError } = await supabase
       .from("documents")
       .select("id, filename, status, chunk_count, created_at")
-      .eq("workspace_id", req.params.workspaceId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
+    if (ownDocsError) throw new HttpError(500, "Failed to load documents");
 
-    if (error) throw new HttpError(500, "Failed to load documents");
-    res.json({ documents: data ?? [] });
+    const ownDocIds = (ownDocs ?? []).map((d) => d.id);
+    const sharesByDoc = new Map<string, { workspaceId: string; name: string }[]>();
+
+    if (ownDocIds.length > 0) {
+      const { data: shareRows } = await supabase
+        .from("shared_documents")
+        .select("document_id, shared_with_workspace_id")
+        .in("document_id", ownDocIds);
+
+      const targetWsIds = [...new Set((shareRows ?? []).map((r) => r.shared_with_workspace_id))];
+      const { data: targetWorkspaces } = targetWsIds.length
+        ? await supabase.from("workspaces").select("id, name").in("id", targetWsIds)
+        : { data: [] as { id: string; name: string }[] };
+      const nameById = new Map((targetWorkspaces ?? []).map((w) => [w.id, w.name]));
+
+      for (const row of shareRows ?? []) {
+        const list = sharesByDoc.get(row.document_id) ?? [];
+        list.push({ workspaceId: row.shared_with_workspace_id, name: nameById.get(row.shared_with_workspace_id) ?? "Unknown" });
+        sharesByDoc.set(row.document_id, list);
+      }
+    }
+
+    const ownDocsAnnotated = (ownDocs ?? []).map((d) => ({
+      ...d,
+      sharedFrom: null as string | null,
+      sharedWith: sharesByDoc.get(d.id) ?? [],
+    }));
+
+    const { data: incomingShareRows } = await supabase
+      .from("shared_documents")
+      .select("document_id")
+      .eq("shared_with_workspace_id", workspaceId);
+    const incomingDocIds = (incomingShareRows ?? []).map((r) => r.document_id);
+
+    let incomingDocs: typeof ownDocsAnnotated = [];
+    if (incomingDocIds.length > 0) {
+      const { data: docsData } = await supabase
+        .from("documents")
+        .select("id, filename, status, chunk_count, created_at, workspace_id")
+        .in("id", incomingDocIds);
+
+      const ownerWsIds = [...new Set((docsData ?? []).map((d) => d.workspace_id))];
+      const { data: ownerWorkspaces } = ownerWsIds.length
+        ? await supabase.from("workspaces").select("id, name").in("id", ownerWsIds)
+        : { data: [] as { id: string; name: string }[] };
+      const ownerNameById = new Map((ownerWorkspaces ?? []).map((w) => [w.id, w.name]));
+
+      incomingDocs = (docsData ?? []).map((d) => ({
+        id: d.id,
+        filename: d.filename,
+        status: d.status,
+        chunk_count: d.chunk_count,
+        created_at: d.created_at,
+        sharedFrom: ownerNameById.get(d.workspace_id) ?? "another workspace",
+        sharedWith: [],
+      }));
+    }
+
+    res.json({ documents: [...ownDocsAnnotated, ...incomingDocs] });
   }),
 );
 
@@ -132,5 +196,33 @@ workspacesRouter.post(
 
     if (error) throw new HttpError(500, "Failed to share document");
     res.status(201).json({ shared: true });
+  }),
+);
+
+// Revoke a previously granted share.
+workspacesRouter.delete(
+  "/:workspaceId/share",
+  requireWorkspaceMember,
+  asyncHandler(async (req, res) => {
+    const parsed = shareSchema.safeParse(req.body);
+    if (!parsed.success) throw new HttpError(400, "documentId and targetWorkspaceId are required");
+
+    // Confirm the document belongs to the workspace revoking the share.
+    const { data: doc } = await supabase
+      .from("documents")
+      .select("id")
+      .eq("id", parsed.data.documentId)
+      .eq("workspace_id", req.params.workspaceId)
+      .maybeSingle();
+    if (!doc) throw new HttpError(404, "Document not found in this workspace");
+
+    const { error } = await supabase
+      .from("shared_documents")
+      .delete()
+      .eq("document_id", parsed.data.documentId)
+      .eq("shared_with_workspace_id", parsed.data.targetWorkspaceId);
+
+    if (error) throw new HttpError(500, "Failed to unshare document");
+    res.json({ unshared: true });
   }),
 );
