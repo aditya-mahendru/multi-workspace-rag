@@ -2,6 +2,7 @@ import { useAuth } from "../state/AuthContext";
 import { useWorkspace } from "../state/WorkspaceContext";
 import { WorkspaceSwitcher } from "../components/WorkspaceSwitcher";
 import { DocumentUpload } from "../components/DocumentUpload";
+import { TasksPanel } from "../components/TasksPanel";
 import { ChatPanel } from "../components/ChatPanel";
 import { ToolCallLog } from "../components/ToolCallLog";
 import { RetrievalDebugPanel } from "../components/RetrievalDebugPanel";
@@ -43,8 +44,13 @@ export function Dashboard() {
         </div>
       ) : (
         <main className="main-grid">
-          <aside className="glass panel panel-scroll">
-            <DocumentUpload workspaceId={activeWorkspaceId} />
+          <aside className="stack panel-scroll">
+            <div className="glass panel">
+              <DocumentUpload workspaceId={activeWorkspaceId} />
+            </div>
+            <div className="glass panel">
+              <TasksPanel workspaceId={activeWorkspaceId} />
+            </div>
           </aside>
 
           <section className="glass panel" style={{ padding: 0, overflow: "hidden" }}>

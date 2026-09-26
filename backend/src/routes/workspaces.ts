@@ -81,6 +81,21 @@ workspacesRouter.get(
   }),
 );
 
+workspacesRouter.get(
+  "/:workspaceId/tasks",
+  requireWorkspaceMember,
+  asyncHandler(async (req, res) => {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, title, details, created_at")
+      .eq("workspace_id", req.params.workspaceId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new HttpError(500, "Failed to load tasks");
+    res.json({ tasks: data ?? [] });
+  }),
+);
+
 const shareSchema = z.object({ documentId: z.string().uuid(), targetWorkspaceId: z.string().uuid() });
 
 // Explicit, opt-in cross-workspace document sharing (stretch goal).
