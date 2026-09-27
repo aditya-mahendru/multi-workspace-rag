@@ -13,6 +13,7 @@ export type ChatEvent =
   | { type: "token"; text: string }
   | { type: "tool_call"; name: string; arguments: unknown; status: "success" | "failed"; result?: unknown; error?: string }
   | { type: "citations"; chunks: RetrievedChunk[] }
+  | { type: "usage"; tokensIn: number; tokensOut: number }
   | { type: "done" }
   | { type: "error"; message: string };
 
@@ -67,6 +68,9 @@ export async function runChatWithTools({ question, contextChunks, history, toolC
 
   onEvent({ type: "citations", chunks: contextChunks });
 
+  let totalTokensIn = 0;
+  let totalTokensOut = 0;
+
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
     // eslint-disable-next-line no-console
     console.log(`[llm] iteration ${iteration}`);
@@ -112,6 +116,14 @@ export async function runChatWithTools({ question, contextChunks, history, toolC
             if (tc.function?.arguments) toolCallAcc[idx].args += tc.function.arguments;
           }
         }
+        // Groq attaches token usage to the finish chunk under x_groq.usage (present on
+        // every streamed completion, unlike vanilla OpenAI which requires stream_options).
+        const groqUsage = (chunk as unknown as { x_groq?: { usage?: { prompt_tokens?: number; completion_tokens?: number } } })
+          .x_groq?.usage;
+        if (groqUsage) {
+          totalTokensIn += groqUsage.prompt_tokens ?? 0;
+          totalTokensOut += groqUsage.completion_tokens ?? 0;
+        }
       }
     } catch (err) {
       // eslint-disable-next-line no-console
@@ -128,6 +140,7 @@ export async function runChatWithTools({ question, contextChunks, history, toolC
     console.log(`[llm] iteration ${iteration} requested ${pendingToolCalls.length} tool call(s): ${pendingToolCalls.map((t) => t.name).join(", ") || "(none, final answer)"}`);
 
     if (pendingToolCalls.length === 0) {
+      onEvent({ type: "usage", tokensIn: totalTokensIn, tokensOut: totalTokensOut });
       onEvent({ type: "done" });
       return;
     }
@@ -207,5 +220,6 @@ export async function runChatWithTools({ question, contextChunks, history, toolC
     // loop continues: model sees tool results and may call another tool or answer.
   }
 
+  onEvent({ type: "usage", tokensIn: totalTokensIn, tokensOut: totalTokensOut });
   onEvent({ type: "error", message: "Reached the maximum number of tool steps without a final answer." });
 }

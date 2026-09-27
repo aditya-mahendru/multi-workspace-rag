@@ -22,6 +22,8 @@ export function MetricsPanel({ workspaceId }: { workspaceId: string }) {
   const hitRate = metrics.length
     ? Math.round((metrics.filter((m) => m.retrieval_hit).length / metrics.length) * 100)
     : 0;
+  const totalTokensIn = metrics.reduce((s, m) => s + (m.token_count_in ?? 0), 0);
+  const totalTokensOut = metrics.reduce((s, m) => s + (m.token_count_out ?? 0), 0);
 
   return (
     <div>
@@ -35,12 +37,17 @@ export function MetricsPanel({ workspaceId }: { workspaceId: string }) {
           hit rate <b>{hitRate}%</b>
         </span>
         <span>&middot;</span>
+        <span>
+          tokens <b>{totalTokensIn}</b> in / <b>{totalTokensOut}</b> out
+        </span>
+        <span>&middot;</span>
         <span>{metrics.length} requests</span>
       </div>
       <ul className="metrics-list">
         {metrics.map((m, i) => (
           <li key={i}>
             {m.endpoint}: {m.latency_ms}ms, hit={String(m.retrieval_hit)}
+            {m.token_count_in != null && `, ${m.token_count_in}→${m.token_count_out} tok`}
           </li>
         ))}
       </ul>

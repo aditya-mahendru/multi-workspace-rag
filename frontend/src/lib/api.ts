@@ -50,6 +50,7 @@ export type ChatStreamEvent =
   | { type: "token"; text: string }
   | { type: "tool_call"; name: string; arguments: unknown; status: "success" | "failed"; result?: unknown; error?: string }
   | { type: "citations"; chunks: unknown[] }
+  | { type: "usage"; tokensIn: number; tokensOut: number }
   | { type: "done" }
   | { type: "error"; message: string };
 

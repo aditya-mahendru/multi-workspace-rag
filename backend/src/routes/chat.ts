@@ -76,6 +76,8 @@ chatRouter.post(
 
     let fullAnswer = "";
     let sawError = false;
+    let tokensIn = 0;
+    let tokensOut = 0;
 
     await runChatWithTools({
       question,
@@ -85,6 +87,10 @@ chatRouter.post(
       onEvent: (event) => {
         if (event.type === "token") fullAnswer += event.text;
         if (event.type === "error") sawError = true;
+        if (event.type === "usage") {
+          tokensIn = event.tokensIn;
+          tokensOut = event.tokensOut;
+        }
         send(event.type, event);
       },
     });
@@ -104,6 +110,8 @@ chatRouter.post(
       endpoint: "chat",
       latencyMs: Date.now() - startedAt,
       retrievalHit: debugInfo.retrieval_hit,
+      tokenCountIn: tokensIn || undefined,
+      tokenCountOut: tokensOut || undefined,
     });
 
     res.end();
