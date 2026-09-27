@@ -66,6 +66,23 @@ A close second: two Groq/Gemini model IDs picked during the initial build
 deployment, causing 404s that only appeared once hitting the real APIs — a reminder that model
 availability isn't something a static plan can get right once and forget.
 
+## Key understandings and learnings
+
+- Isolation in a shared vector store is a query-construction discipline, not a bolt-on feature: the
+  workspace filter has to live inside the same statement as the ANN search, and RLS, the app-level
+  membership check, and that filter are meant to be redundant with each other, not merged into one.
+- Passing once isn't correctness. Both major bugs here (the degenerate ivfflat index, tool calls
+  gated behind retrieval) were silent and intermittent — they only surfaced from repeated, live
+  testing against the real deployed stack, not from a single happy-path run or from reading the code.
+- Tool calling is a two-sided contract: the model proposes, but every real guarantee — schema
+  validation, unknown-tool handling, logging every attempt — has to be enforced server-side,
+  because nothing stops a provider from returning malformed or unexpected output.
+- Provider model IDs are not a "pick once" decision; verify they still resolve right before
+  shipping, since deprecation timelines are outside your control and outside the plan's shelf life.
+- Treating the assistant's "this is done" as a claim to verify, not a fact, was the single
+  highest-leverage habit in this session — asking "have we covered X" instead of assuming is what
+  caught the token-count observability gap that would otherwise have shipped silently broken.
+
 ## What I'd improve with more time
 
 - Add automated tests for isolation, prompt-injection, and idempotency (currently verified manually
