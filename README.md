@@ -136,7 +136,10 @@ backend), sign in on the frontend with:
 - email: `grader@example.com`
 - password: `GraderPass123!`
 
-Two workspaces are preloaded: **Acme Corp** and **Globex Inc**.
+Two workspaces are preloaded: **Acme Corp** and **Globex Inc**. The documents themselves are
+real files under [`sample-docs/`](./sample-docs) (`sample-docs/acme-corp/`,
+`sample-docs/globex-inc/`) if you'd rather upload them manually through the UI instead of running
+the seed script.
 
 1. In **Acme Corp**, ask: _"What is the WiFi password?"_ — the assistant should answer
    `acme-falcon-77` and cite `acme-onboarding.md`.
